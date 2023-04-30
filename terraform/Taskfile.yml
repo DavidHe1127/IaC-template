@@ -1,0 +1,29 @@
+version: '3'
+
+vars:
+  rootDir:
+    sh: pwd
+
+env:
+  AWS_PROFILE: AWS_PROFILE
+
+tasks:
+  # required for az
+  # auth:
+  #   cmds:
+  #     - az login --allow-no-subscriptions
+
+  plan:
+    dir: src
+    cmds:
+      - terraform plan -out main.tfplan -var-file="{{.rootDir}}/variables-input.tfvars"
+
+  apply:
+    dir: src
+    cmds:
+      - terraform apply main.tfplan
+
+  destroy:
+    dir: src
+    cmds:
+      - terraform destroy -var-file="{{.rootDir}}/variables-input.tfvars"
