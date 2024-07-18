@@ -1,0 +1,100 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Example template referencing AWS::Serverless::Api ARN
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    Description: The environment name (e.g., dev, test, prod)
+  StageName:
+    Type: String
+    Default: dev
+    Description: The environment name (e.g., dev, test, prod)
+
+Resources:
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: MyAPI
+      StageName: prod
+      DefinitionBody:
+        swagger: "2.0"
+        info:
+          title: "YouTube API"
+          version: "1.0"
+        paths:
+          /:
+            get:
+              responses:
+                "200":
+                  description: "200 response"
+              x-amazon-apigateway-integration:
+                type: "http"
+                httpMethod: "GET"
+                uri: "https://youtube.com.au"
+                requestParameters:
+                  integration.request.querystring.proxy: "method.request.querystring.proxy"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Content-Type: "'application/json'"
+                passthroughBehavior: "when_no_match"
+              produces:
+                - application/json
+              parameters:
+                - name: proxy
+                  in: query
+                  required: false
+                  type: string
+              responses:
+                "200":
+                  description: "Successful response"
+                  schema:
+                    type: "string"
+                  headers:
+                    Content-Type:
+                      type: "string"
+
+  MyWebACL:
+    Type: 'AWS::WAFv2::WebACL'
+    Properties:
+      DefaultAction:
+        Allow: {}
+      Scope: REGIONAL
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: MyWebACL
+      Rules:
+        - Name: MyRule
+          Priority: 1
+          Action:
+            Block: {}
+          Statement:
+            ByteMatchStatement:
+              FieldToMatch:
+                UriPath: {}
+              PositionalConstraint: CONTAINS
+              SearchString: 'blockme'
+              TextTransformations:
+                - Priority: 0
+                  Type: NONE
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: MyRule
+
+  MyWebACLAssociation:
+    Type: 'AWS::WAFv2::WebACLAssociation'
+    Properties:
+      ResourceArn: !Sub "arn:aws:apigateway:${AWS::Region}::/restapis/${MyApi}/stages/${EnvironmentName}"
+      WebACLArn: !GetAtt MyWebACL.Arn
+
+Outputs:
+  MyApiArn:
+    Description: ARN of the API Gateway
+    Value: !Sub arn:aws:apigateway:${AWS::Region}::/restapis/${MyApi}/stages/prod
+    Export:
+      Name: MyApiArn

@@ -1,0 +1,28 @@
+version: '3'
+
+vars:
+  rootDir:
+    sh: pwd
+
+env:
+  AWS_PROFILE: AWS_PROFILE
+  AWS_REGION: ap-southeast-2
+  STACK_NAME: david-he-stack
+
+tasks:
+  deploy:
+    cmds:
+      - |
+        aws cloudformation deploy \
+          --template-file "{{.rootDir}}"/template.yml \
+          --stack-name ${STACK_NAME} \
+          --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+          --parameter-overrides EnvironmentName=dev StageName=dev
+
+  destroy:
+    cmds:
+      - aws cloudformation delete-stack --stack-name ${STACK_NAME}
+
+  update:
+    cmds:
+      - echo "to update use AWS console to upload a new template from local"
