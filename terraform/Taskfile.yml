@@ -27,3 +27,8 @@ tasks:
     dir: src
     cmds:
       - terraform destroy -var-file="{{.rootDir}}/variables-input.tfvars"
+
+  init:
+    dir: src
+    cmds:
+      - terraform init
